@@ -28,6 +28,19 @@ Run prompts like this:
 llm -m deepseek-chat 'five great names for a pet ocelot'
 llm -m deepseek-reasoner 'solve \\int \\frac{\\ln(x)\\arctan(x)}{x^2+1} dx'
 llm -m deepseek-coder 'how to reverse a linked list in python'
+llm -m deepseek-v4-flash 'summarize the benefits of unit tests'
+llm -m deepseek-v4-pro 'explain how vector databases work'
+```
+
+DeepSeek models support the standard OpenAI-compatible options such as
+`max_tokens`, `top_p`, `stop`, and `json_object`, plus DeepSeek-specific
+options:
+
+```bash
+llm -m deepseek-v4-pro 'write a haiku about databases' \
+  -o temperature 0.7 \
+  -o thinking enabled \
+  -o reasoning_effort xhigh
 ```
 
 ## Development
