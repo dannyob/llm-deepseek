@@ -1,9 +1,10 @@
 [project]
 name = "llm-deepseek"
-version = "0.1.4"
+version = "0.2.0.dev0"
 description = "Access deepseek.com models via API"
 readme = "README.md"
 authors = [{name = "abrasumente"}]
+maintainers = [{name = "Danny O'Brien", email = "danny@spesh.com"}]
 license = {text = "Apache-2.0"}
 classifiers = [
     "License :: OSI Approved :: Apache Software License"
@@ -14,10 +15,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/abrasumente233/llm-deepseek"
-Changelog = "https://github.com/abrasumente233/llm-deepseek/releases"
-Issues = "https://github.com/abrasumente233/llm-deepseek/issues"
-CI = "https://github.com/abrasumente233/llm-deepseek/actions"
+Homepage = "https://github.com/dannyob/llm-deepseek"
+Changelog = "https://github.com/dannyob/llm-deepseek/releases"
+Issues = "https://github.com/dannyob/llm-deepseek/issues"
+CI = "https://github.com/dannyob/llm-deepseek/actions"
+Upstream = "https://github.com/abrasumente233/llm-deepseek"
 
 [project.entry-points.llm]
 deepseek = "llm_deepseek"
