@@ -20,18 +20,6 @@ MODELS = (
     "deepseek-v4-pro",
 )
 
-MODEL_PARAMS = {
-    "deepseek-chat": dict(
-        supports_tools=True,
-    ),
-    "deepseek-coder": dict(
-        supports_tools=True,
-    ),
-    "deepseek-reasoner": dict(
-        supports_tools=True,
-    ),
-}
-
 
 class DeepSeekOptions(Chat.Options):
     temperature: Optional[float] = Field(
@@ -65,11 +53,11 @@ class DeepSeekChat(DeepSeekMixin, Chat):
     needs_key = "deepseek"
     key_env_var = "LLM_DEEPSEEK_KEY"
 
-    def __init__(self, model_name, supports_tools):
+    def __init__(self, model_name):
         super().__init__(
             model_name=model_name,
             model_id=model_name,
-            supports_tools=supports_tools,
+            supports_tools=True,
             api_base="https://api.deepseek.com",
         )
 
@@ -84,11 +72,11 @@ if HAS_ASYNC:
         needs_key = "deepseek"
         key_env_var = "LLM_DEEPSEEK_KEY"
 
-        def __init__(self, model_name, supports_tools):
+        def __init__(self, model_name):
             super().__init__(
                 model_name=model_name,
                 model_id=model_name,
-                supports_tools=supports_tools,
+                supports_tools=True,
                 api_base="https://api.deepseek.com",
             )
 
@@ -103,14 +91,10 @@ def register_models(register):
     if not key:
         return
     for model_id in MODELS:
-        kwargs = dict(
-            model_name=model_id,
-            supports_tools=MODEL_PARAMS.get(model_id, {}).get('supports_tools', False),
-        )
         if HAS_ASYNC:
             register(
-                DeepSeekChat(**kwargs),
-                DeepSeekAsyncChat(**kwargs),
+                DeepSeekChat(model_id),
+                DeepSeekAsyncChat(model_id),
             )
         else:
-            register(DeepSeekChat(**kwargs))
+            register(DeepSeekChat(model_id))
