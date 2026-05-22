@@ -45,6 +45,16 @@ def test_register_models_registers_all_models_with_api_key(monkeypatch):
     assert registered_model_ids == list(llm_deepseek.MODELS)
 
 
+def test_registered_models_support_tools(monkeypatch):
+    monkeypatch.setattr(llm_deepseek.llm, "get_key", lambda *args: "fake-key")
+    registered = []
+
+    llm_deepseek.register_models(lambda *models: registered.extend(models))
+
+    assert registered
+    assert all(m.supports_tools for m in registered)
+
+
 def test_deepseek_options_build_request_kwargs():
     model = llm_deepseek.DeepSeekChat("deepseek-v4-pro")
     prompt = llm.Prompt(
