@@ -19,11 +19,10 @@ This is a fork of [abrasumente233/llm-deepseek](https://github.com/abrasumente23
 
 ## Install
 
-Not published to PyPI — install from source:
+Not published to PyPI — install directly from git:
 
 ```bash
-git clone https://github.com/dannyob/llm-deepseek.git
-llm install -e ./llm-deepseek
+llm install git+https://github.com/dannyob/llm-deepseek.git
 ```
 
 ## Usage
