@@ -2,6 +2,7 @@
 name = "llm-deepseek"
 version = "0.2.0.dev0"
 description = "Access deepseek.com models via API"
+requires-python = ">=3.10"
 readme = "README.md"
 authors = [{name = "abrasumente"}]
 maintainers = [{name = "Danny O'Brien", email = "danny@spesh.com"}]
@@ -10,7 +11,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License"
 ]
 dependencies = [
-    "llm",
+    "llm>=0.32",
     "pydantic",
 ]
 
@@ -25,4 +26,4 @@ Upstream = "https://github.com/abrasumente233/llm-deepseek"
 deepseek = "llm_deepseek"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pytest-httpx", "pytest-asyncio"]

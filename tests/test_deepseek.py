@@ -100,3 +100,133 @@ def test_deepseek_options_reject_invalid_thinking_type():
 
     with pytest.raises(ValueError):
         model.Options(thinking="maybe")
+
+
+def test_build_messages_consumes_prompt_messages_not_conversation():
+    """0.32 contract: build_messages reads prompt.messages, the complete
+    input chain, and must not double-emit from conversation.responses."""
+    model = llm_deepseek.DeepSeekChat("deepseek-chat")
+    prompt = llm.Prompt(
+        "hi",
+        model,
+        messages=[
+            llm.system("be brief"),
+            llm.user("hi"),
+        ],
+    )
+    assert model.build_messages(prompt, None) == [
+        {"role": "system", "content": "be brief"},
+        {"role": "user", "content": "hi"},
+    ]
+
+
+def test_build_messages_replays_reasoning_content():
+    """DeepSeek requires reasoning_content to be passed back when the
+    assistant made a tool call — a ReasoningPart on an assistant message
+    must be emitted as reasoning_content."""
+    model = llm_deepseek.DeepSeekChat("deepseek-reasoner")
+    from llm.parts import ReasoningPart, ToolCallPart
+
+    prompt = llm.Prompt(
+        None,
+        model,
+        messages=[
+            llm.user("weather?"),
+            llm.assistant(
+                ReasoningPart(text="Need to look this up"),
+                ToolCallPart(
+                    name="get_weather",
+                    arguments={"city": "Paris"},
+                    tool_call_id="call_1",
+                ),
+            ),
+            llm.tool_message(
+                llm.parts.ToolResultPart(
+                    tool_call_id="call_1",
+                    name="get_weather",
+                    output="sunny",
+                )
+            ),
+        ],
+    )
+    sent = model.build_messages(prompt, None)
+    assistant = [m for m in sent if m["role"] == "assistant"]
+    assert len(assistant) == 1
+    assert assistant[0]["reasoning_content"] == "Need to look this up"
+    assert assistant[0]["tool_calls"][0]["function"]["name"] == "get_weather"
+
+
+def test_build_messages_skips_redacted_reasoning():
+    """Redacted ReasoningParts (empty chunk) have nothing to echo back."""
+    model = llm_deepseek.DeepSeekChat("deepseek-reasoner")
+    from llm.parts import ReasoningPart, ToolCallPart
+
+    prompt = llm.Prompt(
+        None,
+        model,
+        messages=[
+            llm.user("q"),
+            llm.assistant(
+                ReasoningPart(text="", redacted=True),
+                ToolCallPart(
+                    name="get_weather",
+                    arguments={"city": "Paris"},
+                    tool_call_id="call_1",
+                ),
+            ),
+        ],
+    )
+    sent = model.build_messages(prompt, None)
+    assistant = [m for m in sent if m["role"] == "assistant"]
+    assert "reasoning_content" not in assistant[0]
+
+
+def test_execute_yields_reasoning_stream_events():
+    """Streamed reasoning_content must surface as StreamEvent reasoning
+    events so the framework assembles ReasoningPart objects."""
+    model = llm_deepseek.DeepSeekChat("deepseek-reasoner")
+
+    class FakeDelta:
+        role = "assistant"
+        content = None
+        tool_calls = None
+
+        def __init__(self, reasoning_content=None, content=None):
+            self.reasoning_content = reasoning_content
+            if content is not None:
+                self.content = content
+
+    class FakeChoice:
+        logprobs = None
+        finish_reason = None
+
+        def __init__(self, delta):
+            self.delta = delta
+
+    class FakeChunk:
+        usage = None
+
+        def __init__(self, delta):
+            self.choices = [FakeChoice(delta)]
+
+    chunks = iter(
+        [
+            FakeChunk(FakeDelta(reasoning_content="Let me think")),
+            FakeChunk(FakeDelta(reasoning_content=" step by step.")),
+            FakeChunk(FakeDelta(content="42")),
+        ]
+    )
+
+    def fake_create(**kwargs):
+        return chunks
+
+    completions = type("Completions", (), {"create": staticmethod(fake_create)})()
+    chat = type("Chat", (), {"completions": completions})()
+    model.get_client = lambda key: type("Client", (), {"chat": chat})()
+
+    prompt = llm.Prompt("q", model)
+    response = llm.Response(prompt, model, stream=True)
+    events = list(model.execute(prompt, True, response, None, "k"))
+    reasoning = [e for e in events if e.type == "reasoning"]
+    assert reasoning
+    assert "".join(e.chunk for e in reasoning) == "Let me think step by step."
