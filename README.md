@@ -6,6 +6,8 @@
 
 DeepSeek v4 (and the older chat/coder/reasoner models) for the [LLM](https://llm.datasette.io/) CLI, with tool calling.
 
+Requires [LLM 0.32+](https://llm.datasette.io/), which introduced the structured-messages and streaming-events plugin contract that this plugin targets. Reasoning traces from `deepseek-reasoner` and the v4 models surface as `StreamEvent(type="reasoning")` parts, and `reasoning_content` is replayed back to the API on subsequent tool-call turns as DeepSeek requires.
+
 ```bash
 llm -m deepseek-v4-pro 'write a haiku about databases' \
   -o thinking enabled \
